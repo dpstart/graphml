@@ -1,9 +1,14 @@
+from dgl.data import citation_graph as citegrh
+import networkx as nx
 import dgl
 import dgl.function as fn
 import torch as th
 import torch.nn as nn
 import torch.nn.functional as F
 from dgl import DGLGraph
+
+import time
+import numpy as np
 
 gcn_msg = fn.copy_src(src='h', out='m')
 gcn_reduce = fn.sum(msg='m', out='h')
@@ -35,8 +40,6 @@ class Net(nn.Module):
         return x
 net = Net()
 
-from dgl.data import citation_graph as citegrh
-import networkx as nx
 def load_cora_data():
     data = citegrh.load_cora()
     features = th.FloatTensor(data.features)
@@ -56,8 +59,7 @@ def evaluate(model, g, features, labels, mask):
         correct = th.sum(indices == labels)
         return correct.item() * 1.0 / len(labels)
 
-import time
-import numpy as np
+
 g, features, labels, train_mask, test_mask = load_cora_data()
 optimizer = th.optim.Adam(net.parameters(), lr=1e-2)
 dur = []

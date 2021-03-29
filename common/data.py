@@ -65,7 +65,8 @@ def to_sparse(adj):
     return (adj.nonzero(), adj.data)
 
 
-def load_data(path=".", dataset_str: str = "cora", sparse: bool = False, mat=False):
+def load_data(path=".", dataset_str: str = "cora", sparse: bool = False,
+              mode="default"):
     """
     Loads input data from gcn/data directory
     ind.dataset_str.x => the feature vectors of the training instances as scipy.sparse.csr.csr_matrix object;
@@ -122,7 +123,7 @@ def load_data(path=".", dataset_str: str = "cora", sparse: bool = False, mat=Fal
     features[test_idx_reorder, :] = features[test_idx_range, :]
     adj = nx.adjacency_matrix(nx.from_dict_of_lists(graph))
 
-    #adj_list = convert(adj)
+    adj_list = convert(adj)
 
     labels = np.vstack((ally, ty))
     labels[test_idx_reorder, :] = labels[test_idx_range, :]
@@ -154,6 +155,9 @@ def load_data(path=".", dataset_str: str = "cora", sparse: bool = False, mat=Fal
     #         idx_test,
     #     )
     # else:
+
+    if mode=="sage":
+        adj = adj_list
 
     return (
         adj,
