@@ -32,7 +32,11 @@ def train(model, epoch):
 
     for batch_size, n_id, adjs in train_loader:
 
+
         # `adjs` holds a list of `(edge_index, e_id, size)` tuples
+
+        print(n_id.shape)
+        import sys;sys.exit(1)
 
         adjs = [adj.to(device) for adj in adjs]
         
