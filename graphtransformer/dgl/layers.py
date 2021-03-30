@@ -26,11 +26,28 @@ def scaled_exp(field, scale_constant):
     return func
 
 
+class MLPReadout(nn.Module):
+
+    def __init__(self, input_dim, output_dim, L=2): #L=nb_hidden_layers
+        super().__init__()
+        list_FC_layers = [ nn.Linear( input_dim//2**l , input_dim//2**(l+1) , bias=True ) for l in range(L) ]
+        list_FC_layers.append(nn.Linear( input_dim//2**L , output_dim , bias=True ))
+        self.FC_layers = nn.ModuleList(list_FC_layers)
+        self.L = L
+        
+    def forward(self, x):
+        y = x
+        for l in range(self.L):
+            y = self.FC_layers[l](y)
+            y = F.relu(y)
+        y = self.FC_layers[self.L](y)
+        return y
+
 class MultiHeadAttention(nn.Module):
     def __init__(self, in_dim, out_dim, num_heads):
-
+        super().__init__()
         self.out_dim = out_dim
-        self.num_head = num_heads
+        self.num_heads = num_heads
 
         self.Q = nn.Linear(in_dim, out_dim * num_heads, bias=True)
         self.K = nn.Linear(in_dim, out_dim * num_heads, bias=True)
@@ -77,7 +94,7 @@ class MultiHeadAttention(nn.Module):
 class GraphTransformerLayer(nn.Module):
     def __init__(self, in_dim, out_dim, num_heads, dropout=0.0):
 
-        super().__init__()
+        super(GraphTransformerLayer, self).__init__()
 
         self.in_channels = in_dim
         self.out_channels = out_dim
@@ -112,7 +129,7 @@ class GraphTransformerLayer(nn.Module):
 
         h_in2 = h
 
-        h = self.FFN_layer1(1)
+        h = self.FFN_layer1(h)
         h = F.relu(h)
         h = F.dropout(h, self.dropout, training=self.training)
         h = self.FFN_layer2(h)

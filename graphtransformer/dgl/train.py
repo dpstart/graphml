@@ -4,35 +4,34 @@ import math
 import dgl
 
 
-def train_epoch(model, optimizer, device, dataloader, epoch):
+def accuracy(scores, targets):
+    scores = scores.argmax(dim=1)
+    acc = (scores==targets).float().sum().item()
+    acc = acc / len(targets)
+    return acc
+
+def train_iter(model, g, optimizer, device, epoch):
 
     model.train()
-    epoch_loss = epoch_train_acc = nb_data = gpu_mem = 0
+    epoch_loss = epoch_train_acc = 0
 
-    for iter, (batch_graphs, batch_labels) in enumerate(dataloader):
+    x = g.ndata["feat"].to(device)
+    try:
+        e = g.edata["feat"].to(device)
+    except:
+        e = None
 
-        batch_graphs = batch_graphs.to(device)
-        batch_x = batch_graphs.ndata["feat"].to(device)
-        batch_e = batch_graphs.edata["feat"].to(device)
+    labels = g.ndata["label"].to(device)
+    lap_pos_enc = g.ndata["lap_pos_enc"].to(device)
+    optimizer.zero_grad()
 
-        batch_labels = batch_labels.to(device)
+    scores = model(
+        g, x, e, lap_pos_enc, None
+    )
 
-        optimizer.zero_grad()
-
-        try:
-            batch_lap_pos_enc = batch_graphs.ndata["lap_pos_enc"].to(device)
-            sign_flip = torch.rand(batch_lap_pos_enc.size(1)).to(device)
-            sign_flip[sign_flip >= 0.5] = 1.0
-            sign_flip[sign_flip < 0.5] = -1.0
-            batch_lap_pos_enc = batch_lap_pos_enc * sign_flip.unsqueeze(0)
-        except:
-            batch_lap_pos_enc = None
-
-        try:
-            batch_wl_pos_enc = batch_graphs.ndata["wl_pos_enc"].to(device)
-        except:
-            batch_wl_pos_enc = None
-
-        batch_scores = model(
-            batch_graphs, batch_x, batch_e, batch_lap_pos_enc, batch_wl_pos_enc
-        )
+    loss = model.loss(scores, labels)
+    loss.backward(retain_graph=True)
+    optimizer.step()
+    epoch_loss += loss.item()
+    epoch_train_acc += accuracy(scores, labels)
+    return epoch_loss, epoch_train_acc, optimizer
